@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS tool_calls (
     ts          TEXT NOT NULL,     -- UTC, ISO 8601, when the call arrived
     client      TEXT,              -- client address
     user        TEXT,              -- authenticated user id (when authentication is on)
+    token_id    INTEGER,           -- id of the token used (when authentication is on)
     tool        TEXT,
     database    TEXT,
     sql         TEXT,
@@ -44,8 +45,9 @@ class QueryLog:
         self._db.execute("PRAGMA synchronous = NORMAL")
         self._db.executescript(SCHEMA)
         columns = {row[1] for row in self._db.execute("PRAGMA table_info(tool_calls)")}
-        if "user" not in columns:  # log files created before authentication existed
-            self._db.execute("ALTER TABLE tool_calls ADD COLUMN user TEXT")
+        for name, ddl in (("user", "TEXT"), ("token_id", "INTEGER")):  # log files created before these existed
+            if name not in columns:
+                self._db.execute(f"ALTER TABLE tool_calls ADD COLUMN {name} {ddl}")
 
     def close(self) -> None:
         self._db.close()
@@ -72,13 +74,15 @@ class QueryLog:
         params = ctx.params or {}
         args = params.get("arguments") or {}
         client = getattr(getattr(ctx.request, "client", None), "host", None)
-        user = getattr(getattr(ctx.request, "state", None), "user", None)
+        state = getattr(ctx.request, "state", None)
+        user, token_id = getattr(state, "user", None), getattr(state, "token_id", None)
         try:
             self._db.execute(
-                "INSERT INTO tool_calls (ts, client, user, tool, database, sql, arguments, duration_ms, status, error)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO tool_calls"
+                " (ts, client, user, token_id, tool, database, sql, arguments, duration_ms, status, error)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    ts, client, user, params.get("name"), _str(args.get("database")), _str(args.get("sql")),
+                    ts, client, user, token_id, params.get("name"), _str(args.get("database")), _str(args.get("sql")),
                     json.dumps(args, ensure_ascii=False, default=str), round(duration_ms, 3), status, error,
                 ),
             )

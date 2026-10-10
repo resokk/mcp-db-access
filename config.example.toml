@@ -9,6 +9,9 @@ query_log = "queries.sqlite"  # SQLite file logging every tool call (path relati
 enabled = false      # true: every request needs "Authorization: Bearer <token>"
 db = "auth.sqlite"   # users and tokens; manage with `uv run python auth.py config.toml ...`
 
+[admin]
+port = 8001          # read-only web console: `uv run python admin.py config.toml` (always 127.0.0.1)
+
 [databases.main_pg]
 type = "postgres"
 host = "pg.example.local"

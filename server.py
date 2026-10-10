@@ -258,8 +258,9 @@ if __name__ == "__main__":
     app = mcp.streamable_http_app(host=settings.host)
     store = TokenStore(settings.auth_db) if settings.auth_db else None
     if store:
-        if not store.users():
-            log.warning("authentication is on but %s has no users: every request will be rejected", settings.auth_db)
+        if all(u["deleted_at"] for u in store.users()):
+            log.warning("authentication is on but %s has no active users: every request will be rejected",
+                        settings.auth_db)
         app = BearerAuth(app, store)
     try:
         uvicorn.run(app, host=settings.host, port=settings.port)

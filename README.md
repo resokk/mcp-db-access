@@ -67,16 +67,33 @@ sqlite3 queries.sqlite "SELECT ts, tool, database, status, duration_ms, sql FROM
 With `[auth] enabled = true` every HTTP request must carry `Authorization: Bearer <token>`; otherwise the
 server answers `401`. Users (`id`, `cert_sn` — certificate serial number) and their tokens live in a SQLite
 file (`[auth] db`, default `auth.sqlite`); only a SHA-256 hash of each token is stored. Changes apply
-immediately, without a restart. The authenticated user id is written to the query log (`user` column).
+immediately, without a restart.
+
+Nothing is deleted physically, so the query log can always be traced back: a user is marked deleted
+(`deleted_at`), a token is revoked (`active = 0`). A token is accepted while it is active, not expired
+(`expires_at`, empty = never) and its user is not deleted. The query log records `user` and `token_id`.
 
 ```sh
-uv run python auth.py config.toml user-add alice 0A:1B:2C   # user id, certificate serial number
-uv run python auth.py config.toml token-add alice           # prints the token once — save it
-uv run python auth.py config.toml list                      # users with their token ids
-uv run python auth.py config.toml token-del 3               # revoke a token
-uv run python auth.py config.toml user-del alice            # delete a user and all their tokens
+uv run python auth.py config.toml user-add alice 0A:1B:2C         # user id, certificate serial number
+uv run python auth.py config.toml token-add alice                 # never expires; prints the token once
+uv run python auth.py config.toml token-add alice 2026-12-31      # valid through that day (UTC)
+uv run python auth.py config.toml token-expires 3 2027-01-01T09:00+03:00   # or `never`
+uv run python auth.py config.toml token-revoke 3                  # token-activate 3 to undo
+uv run python auth.py config.toml user-del alice                  # all alice's tokens stop working
+uv run python auth.py config.toml user-restore alice
+uv run python auth.py config.toml list                            # users, tokens and their status
 
 claude mcp add --transport http db http://127.0.0.1:8000/mcp --header "Authorization: Bearer <token>"
+```
+
+### Web console
+
+A read-only console in Homebrew-terminal style: all users with their status, and each user's tokens
+(valid / expired / revoked, created, expires). It is a separate process, always bound to `127.0.0.1`
+(`[admin] port`, default 8001), so it is never exposed together with the MCP endpoint.
+
+```sh
+uv run python admin.py config.toml   # http://127.0.0.1:8001
 ```
 
 ## Security
