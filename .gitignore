@@ -1,3 +1,5 @@
 .venv/
 __pycache__/
 config.toml
+queries.sqlite*
+auth.sqlite*

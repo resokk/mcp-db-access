@@ -3,6 +3,11 @@ host = "127.0.0.1"   # no auth: keep on localhost or behind a trusted proxy
 port = 8000
 max_rows = 200       # row limit per result
 query_timeout = 120  # seconds
+query_log = "queries.sqlite"  # SQLite file logging every tool call (path relative to the working dir)
+
+[auth]
+enabled = false      # true: every request needs "Authorization: Bearer <token>"
+db = "auth.sqlite"   # users and tokens; manage with `uv run python auth.py config.toml ...`
 
 [databases.main_pg]
 type = "postgres"
