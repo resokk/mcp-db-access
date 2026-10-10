@@ -1,0 +1,35 @@
+[server]
+host = "127.0.0.1"   # no auth: keep on localhost or behind a trusted proxy
+port = 8000
+max_rows = 200       # row limit per result
+query_timeout = 120  # seconds
+
+[databases.main_pg]
+type = "postgres"
+host = "pg.example.local"
+port = 5432
+user = "app"
+password_env = "MAIN_PG_PASSWORD"  # name of env variable with the password
+database = "app"
+description = "Main application DB"
+pool_min = 1
+pool_max = 10
+
+[databases.reports_pg]
+type = "postgres"
+host = "pg2.example.local"
+port = 5432
+user = "reports"
+password_env = "REPORTS_PG_PASSWORD"
+database = "reports"
+description = "Reporting DB"
+
+[databases.ob]
+type = "oceanbase"                  # OceanBase in MySQL mode
+host = "ob.example.local"
+port = 2881
+user = "app@mytenant"               # user@tenant[#cluster]
+password_env = "OB_PASSWORD"
+database = "app"
+description = "OceanBase app DB"
+pool_max = 10
