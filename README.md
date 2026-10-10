@@ -86,16 +86,6 @@ uv run python auth.py config.toml list                            # users, token
 claude mcp add --transport http db http://127.0.0.1:8000/mcp --header "Authorization: Bearer <token>"
 ```
 
-### Web console
-
-A read-only console in Homebrew-terminal style: all users with their status, and each user's tokens
-(valid / expired / revoked, created, expires). It is a separate process, always bound to `127.0.0.1`
-(`[admin] port`, default 8001), so it is never exposed together with the MCP endpoint.
-
-```sh
-uv run python admin.py config.toml   # http://127.0.0.1:8001
-```
-
 ## Security
 
 Authentication is off by default. Tokens travel in plain text over HTTP, so beyond localhost use TLS
